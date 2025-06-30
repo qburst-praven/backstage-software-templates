@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ${{ values.app_name }}
+  namespace: ${{ values.app_name }}
+  labels:
+    app: ${{ values.app_name }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ${{ values.app_name }}
+  template:
+    metadata:
+      labels:
+        app: ${{ values.app_name }}
+    spec:
+      containers:
+        - name: ${{ values.app_name }}
+          image: ghcr.io/qburst-praven/${{ values.app_name }}/${{ values.app_name }}:latest
+          ports:
+            - containerPort: 8080
+          env:
+            - name: USER
+              value: "${{ values.user_name }}"
+            - name: PORT
+              value: "8080"
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "50m"
+            limits:
+              memory: "128Mi"
+              cpu: "100m"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 5

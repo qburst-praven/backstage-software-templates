@@ -1,0 +1,60 @@
+name: Deploy ${{ values.app_name }}
+
+on:
+  workflow_run:
+    workflows: ["Build ${{ values.app_name }}"]
+    types:
+      - completed
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    if: ${{ '${{ github.event.workflow_run.conclusion }}' }} == 'success'
+    permissions:
+      contents: read
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        ref: main
+
+    - name: Deploy K8s Namespace
+      run: |
+        kubectl apply -f k8s/namespace.yaml
+
+    - name: Deploy to Kubernetes
+      run: |
+        echo "Deploying to Kubernetes cluster..."
+        kubectl apply -f k8s/
+        
+        echo "Waiting for deployment to complete..."
+        kubectl rollout status deployment/${{ values.app_name }} -n ${{ values.app_name }} --timeout=300s
+
+    - name: Verify deployment
+      run: |
+        echo "Verifying deployment..."
+        kubectl get pods -l app=${{ values.app_name }} -n ${{ values.app_name }}
+        kubectl get services -l app=${{ values.app_name }} -n ${{ values.app_name }}
+        kubectl get ingress ${{ values.app_name }}-ingress -n ${{ values.app_name }}
+        
+        echo "Checking pod readiness..."
+        kubectl wait --for=condition=Ready pod -l app=${{ values.app_name }} -n ${{ values.app_name }} --timeout=120s
+        
+        echo "Deployment verification completed successfully!"
+
+    - name: Get deployment info
+      run: |
+        echo "=== Deployment Summary ==="
+        echo "Namespace: ${{ values.app_name }}"
+        echo "Pods:"
+        kubectl get pods -l app=${{ values.app_name }} -n ${{ values.app_name }} -o wide
+        echo ""
+        echo "Services:"
+        kubectl get svc -l app=${{ values.app_name }} -n ${{ values.app_name }}
+        echo ""
+        echo "Ingress:"
+        kubectl get ingress ${{ values.app_name }}-ingress -n ${{ values.app_name }}
+        echo ""
+        echo "Application should be available at: http://${{ values.app_name }}.local" 

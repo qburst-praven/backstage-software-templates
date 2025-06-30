@@ -1,18 +1,19 @@
 apiVersion: scaffolder.backstage.io/v1beta3
 kind: Template
 metadata:
-  name: python-template
-  title: Python flask template
-  description: Provisions a minimalistic flask application
+  name: python-flask-demo-template
+  title: Python Flask Demo Application
+  description: Creates a Python Flask application with REST API endpoints, Docker containerization, and Kubernetes deployment
 spec:
   owner: development
   type: service
 
   parameters:
-    - title: Fill in some steps
+    - title: Application Configuration
       required:
         - component_id
         - environment
+        - user_name
       properties:
         component_id:
           title: Component name
@@ -24,8 +25,14 @@ spec:
           type: string
           description: The environment where this component will be deployed
           enum:
-            - dev
+            - stage
             - prod
+        user_name:
+          title: Application User
+          type: string
+          description: The user name that will be used in the application greeting (only letters, numbers, and underscores allowed)
+          pattern: '^[a-zA-Z][a-zA-Z0-9_]*$'
+          default: 'BackstageUser'
 
   steps:
     - id: fetch-base
@@ -36,15 +43,14 @@ spec:
         values:
           app_name: ${{parameters.component_id}}
           app_env: ${{parameters.environment}}
+          user_name: ${{parameters.user_name}}
 
     - id: publish
       name: Publish
       action: publish:github
       input:
-        allowedHosts:
-          - github.com
-        description: This is ${{ parameters.component_id }}
-        repoUrl: github.com?owner=ricardoandre-97&repo=${{parameters.component_id}}
+        description: Python Flask Demo Application - ${{ parameters.component_id }}
+        repoUrl: github.com?owner=qburst-praven&repo=${{parameters.component_id}}
         protectDefaultBranch: false
         repoVisibility: public
 
@@ -59,3 +65,5 @@ spec:
     links:
       - title: Repository
         url: ${{ steps['publish'].output.remoteUrl }}
+      - title: API Documentation
+        url: ${{ steps['publish'].output.remoteUrl }}/blob/main/README.md
