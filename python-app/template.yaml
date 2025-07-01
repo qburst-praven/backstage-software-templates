@@ -62,7 +62,7 @@ spec:
       action: http:backstage:request
       input:
         method: POST
-        url: ${{ parameters.jenkins_server }}/createItem?name=${{ parameters.component_id }}-pipeline
+        path: /proxy/jenkins/createItem?name=${{ parameters.component_id }}-pipeline
         headers:
           Content-Type: application/xml
         body: |
