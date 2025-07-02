@@ -103,6 +103,13 @@ spec:
             <disabled>false</disabled>
           </flow-definition>
 
+    - id: trigger-build
+      name: Trigger First Build
+      action: http:backstage:request
+      input:
+        method: POST
+        path: /proxy/jenkins/job/${{ parameters.component_id }}-pipeline/build
+
     - id: register
       name: Register
       action: catalog:register
